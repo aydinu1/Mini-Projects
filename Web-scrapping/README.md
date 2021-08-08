@@ -2,7 +2,7 @@ This code fetches recipe data from https://www.skinnytaste.com/ and interacts wi
 
 ## Important notes:
 
-1- Always check the website's terms and robots.txt file before scraping.
+1- Always check the website's terms and conditions and robots.txt file before scraping. Read the statements about legal use of the data.
 
 2- Do not request data from the website too aggressiely and ensure that your program behaves in a reasonable manner.
 
