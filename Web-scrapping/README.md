@@ -1,6 +1,6 @@
 This code fetches recipe data from https://www.skinnytaste.com/ and interacts with user to display recipes fall into specific user choices.
 
-Important notes:
+## Important notes:
 
 1- Always check the website's terms and robots.txt file before scraping.
 
