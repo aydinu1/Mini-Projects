@@ -270,3 +270,4 @@ recall = tp/(tp+fn)
 
 print("Recall of the model is {:.2f}".format(recall))
 print("Precision of the model is {:.2f}".format(precision))
+
