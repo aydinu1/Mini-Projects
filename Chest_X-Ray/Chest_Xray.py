@@ -16,10 +16,17 @@ import os
 import sys
 
 #%%
-
-
-
 def get_data(path_ini, img_size):
+    """This function is for getting the chest xray imagines from the 
+    specified path. The function also resizes the images.
+    
+    Args:
+    path_ini (str): The directory of the images
+    img_size (tuple): pixel x pixel image size
+    
+    Returns:
+    np.array, np.array: Arrays of images and corresponding labels    
+    """
     
     data = []
     labels = []
@@ -37,19 +44,37 @@ def get_data(path_ini, img_size):
         
 
 
-def scale_encode(Xtrain, Xval, Xtest, ytrain, yval, ytest):
-    Xtrain_scl = np.reshape(Xtrain, Xtrain.shape)/255
-    Xval_scl = np.reshape(Xval, Xval.shape)/255
-    Xtest_scl = np.reshape(Xtest, Xtest.shape)/255
+def scale_encode(X, y):
     
-    ytrain_enc = np.array(pd.get_dummies(ytrain, drop_first = True))
-    yval_enc = np.array(pd.get_dummies(yval, drop_first = True))
-    ytest_enc = np.array(pd.get_dummies(ytest, drop_first = True))
+    """This function scales the images by 255 and encodes the image labels.
     
-    return Xtrain_scl, Xval_scl, Xtest_scl, ytrain_enc, yval_enc, ytest_enc
+    Args:
+    X (np.array): Array of images
+    y (np.array): Array of labels
+    
+    Returns:
+    np.array, np.array: Arrays of scaled images and corresponding 
+                        encoded labels    
+    """
+    X_scl = np.reshape(X, X.shape)/255
+    
+    y_enc = np.array(pd.get_dummies(y, drop_first = True))
+    
+    return X_scl, y_enc
 
 #%%
-def image_augment(Xtrain_scl, ytrain_enc, b_size):
+def image_augment(X, y, b_size):
+    
+    """This function is used for image augmentation.
+    
+    Args:
+    X (np.array): Array of images
+    y (np.array): Array of labels
+    b_size (int): batch size
+    
+    Returns:
+    Augmented image numpy array iterator  
+    """
 
     datagen_train = ImageDataGenerator(featurewise_center=False,  # set input mean to 0 over the dataset
             samplewise_center=False,  # set each sample mean to 0
@@ -62,20 +87,19 @@ def image_augment(Xtrain_scl, ytrain_enc, b_size):
             height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
             shear_range=0.2,
             horizontal_flip = True,  # randomly flip images
-            vertical_flip=False,
-            fill_mode='nearest')  # randomly flip images
+            vertical_flip=False, # randomly flip images
+            fill_mode='nearest')  
     
-    
-    
-    # Note that the validation data should not be augmented!
-    datagen_train.fit(Xtrain_scl)
-    train_aug = datagen_train.flow(Xtrain_scl,ytrain_enc, batch_size = b_size)
+    # Note that the validation and test data should not be augmented!
+    datagen_train.fit(X)
+    train_aug = datagen_train.flow(X, y, batch_size = b_size)
     
     return train_aug
 
 
-#%% define image paths and load the images
+#%% Get images, scale, encode and augment
 
+# define image paths and load the images
 #the images are located in local pc due to large size.
 #download the dataset from: https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia
 train_path = "D:\\Python_studies\\projects\\chest_xray_data\\archive\\chest_xray\\train"
@@ -90,8 +114,9 @@ Xtest, ytest = get_data(test_path, img_size)
 Xval, yval = get_data(val_path, img_size)
 
 # scale and encode the data
-Xtrain_scl, Xval_scl, Xtest_scl, ytrain_enc, yval_enc, ytest_enc\
-    = scale_encode(Xtrain, Xval, Xtest, ytrain, yval, ytest)
+Xtrain_scl, ytrain_enc = scale_encode(Xtrain, ytrain)
+Xval_scl, yval_enc = scale_encode(Xval, yval)
+Xtest_scl, ytest_enc = scale_encode(Xtest, ytest)
 
 #use image augmentation to get better representation for images
 batch_size = 32 #batch size for image generator training
@@ -101,6 +126,18 @@ train_aug = image_augment(Xtrain_scl, ytrain_enc, batch_size)
 #%%
 
 def get_pretrained_model(base_model, in_size, n_last):
+    
+    """This function is used for getting initial pre-trained model for
+    transfer learning.
+    
+    Args:
+    base_model: base pre-trained model (see https://keras.io/api/applications/)
+    in_size (tuple): size of the images (width, height, color channels)
+    n_last (int): number of nuerons in the last layer before the output layer.
+    
+    Returns:
+    Pre-trained model with head and final layers.
+    """
     #Input shape = [width, height, color channels]
     inputs = layers.Input(shape = in_size)
     
@@ -121,6 +158,19 @@ def get_pretrained_model(base_model, in_size, n_last):
 
 
 def retrain_pretrained(model_pretrained, n_epochs):
+    
+    """This function is used for training the neural network model.
+    
+    Args:
+    model_pretrained: Model with all layers added.
+    n_epochs (int): number of epochs for the training.
+    
+    Returns:
+    Trained model.
+    
+    Note: check parameters for the compile, EarlyStopping and 
+         ReduceLROnPlateau
+    """
 
     model_pretrained.compile(loss='binary_crossentropy',
                              optimizer = 
@@ -220,10 +270,3 @@ recall = tp/(tp+fn)
 
 print("Recall of the model is {:.2f}".format(recall))
 print("Precision of the model is {:.2f}".format(precision))
-
-
-
-
-
-
-
